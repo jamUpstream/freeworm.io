@@ -1,17 +1,35 @@
 <!doctype html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
     <link rel="icon" type="image/png" href="icons/logo.png">
     <title>freeworm.io</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 </head>
-
 <body>
+
+    <!-- INTRO SCREEN -->
+    <div id="introScreen">
+        <canvas id="introCanvas"></canvas>
+        <div class="introContent">
+            <div class="introWormRow">
+                <div class="iws is1"></div><div class="iws is2"></div>
+                <div class="iws is3"></div><div class="iws is4"></div>
+                <div class="iws is5"></div><div class="iwh"></div>
+            </div>
+            <h1 class="iTitle">freeworm<span class="ig">.io</span></h1>
+            <p class="iSub">GROW · SURVIVE · DOMINATE</p>
+            <div class="iBarWrap"><div class="iBarFill"></div></div>
+        </div>
+    </div>
+
+    <!-- GAME CANVAS -->
     <canvas id="game"></canvas>
 
+    <!-- IN-GAME UI -->
     <div class="ui">
         <div class="killfeed" id="killfeed"></div>
         <div class="killtoast" id="killtoast"></div>
@@ -29,194 +47,753 @@
             <div class="row"><span class="muted">Magnet</span><span id="hudMagnet" class="muted">—</span></div>
             <div class="row"><span class="muted">FPS</span><span id="hudFps">—</span></div>
         </div>
-
         <div class="score" id="scoreboard">
             <div class="title">Scoreboard</div>
             <div id="scoreList"></div>
             <div class="meLine" id="scoreMe"></div>
             <div class="sub">Power-up: <span id="activePowers">—</span></div>
-
             <div class="devCheats" id="devCheats">
                 <div class="devTitle">
                     <span>DEV Cheats</span>
-                    <span class="devHint"><span class="kbd">`</span> hide • <span class="kbd">0–9</span> toggle</span>
+                    <span class="devHint"><span class="kbd">`</span> hide · <span class="kbd">0–9</span> toggle</span>
                 </div>
                 <div id="devCheatsList"></div>
             </div>
         </div>
-
         <div class="mini" id="minimapWrap">
             <canvas id="minimap" width="150" height="150"></canvas>
         </div>
-
         <div class="edgeGlow"></div>
     </div>
 
+    <!-- LOBBY OVERLAY -->
+    <div class="overlay" id="startOverlay" style="display:none;">
+        <div class="lobby">
 
-
-    <div class="overlay" id="startOverlay">
-        <div class="card lobbyCard">
-            <div class="lobbyTop">
-                <div class="lobbyBrand">
-                    <h1 class="lobbyTitle">freeworm.io</h1>
-                    <p class="lobbySub">Collect pellets, grow, and avoid hitting other worms.</p>
-                </div>
-            </div>
-
-            <!-- Main lobby buttons: Start / Info / Customize -->
-            <div class="lobbyNav" role="tablist" aria-label="Lobby navigation">
-                <button class="lobbyTab primary" id="lobbyTabStart" role="tab" aria-selected="true"
-                    aria-controls="lobbyViewStart">Start</button>
-                <button class="lobbyTab secondary" id="lobbyTabInfo" role="tab" aria-selected="false"
-                    aria-controls="lobbyViewInfo">Info</button>
-                <button class="lobbyTab secondary" id="lobbyTabCustomize" role="tab" aria-selected="false"
-                    aria-controls="lobbyViewCustomize">Customize</button>
-                <button class="lobbyTab secondary" id="lobbyTabLeaderboard" role="tab" aria-selected="false"
-                    aria-controls="lobbyViewLeaderboard">Leaderboard</button>
-            </div>
-
-            <div class="lobbyViews">
-                <!-- START VIEW -->
-                <div class="lobbyView" id="lobbyViewStart" role="tabpanel" aria-labelledby="lobbyTabStart">
-                    <div class="lobbyPanel">
-                        <div class="panelTitle">Ready to play</div>
-
-                        <div class="field nameField">
-                            <label for="nameInput">Enter your name <span class="muted">(optional)</span></label>
-                            <input id="nameInput" type="text" maxlength="18" placeholder="e.g. Jam" />
+            <!-- LEFT SIDEBAR -->
+            <aside class="lobbySide">
+                <div class="sideInner">
+                    <div class="sideBrand">
+                        <div class="sideWorm">
+                            <div class="sw sw1"></div><div class="sw sw2"></div>
+                            <div class="sw sw3"></div><div class="swh"></div>
                         </div>
+                        <span class="sideTitle">freeworm<span class="ta">.io</span></span>
+                    </div>
+                    <p class="sideSub">Collect pellets, grow large, and outlast every worm on the map.</p>
 
-                        <div class="lobbyActions single">
-                            <button class="primary" id="btnStart">Play</button>
+                    <nav class="sideNav">
+                        <button class="sideTab active" id="lobbyTabStart" data-target="lobbyViewStart">
+                            <span class="ti">▶</span>Play
+                        </button>
+                        <button class="sideTab" id="lobbyTabInfo" data-target="lobbyViewInfo">
+                            <span class="ti">ℹ</span>How to Play
+                        </button>
+                        <button class="sideTab" id="lobbyTabCustomize" data-target="lobbyViewCustomize">
+                            <span class="ti">✦</span>Customize
+                        </button>
+                        <button class="sideTab" id="lobbyTabLeaderboard" data-target="lobbyViewLeaderboard">
+                            <span class="ti">⬆</span>Leaderboard
+                        </button>
+                    </nav>
+
+                    <div class="sideFooter">
+                        <span>By James Tercenio</span>
+                        <span class="vbadge">v1.0.23</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- RIGHT CONTENT -->
+            <main class="lobbyContent">
+
+                <!-- PLAY -->
+                <div class="lView active" id="lobbyViewStart">
+                    <div class="lViewHead">
+                        <h2>Ready to Play</h2>
+                        <p>Jump straight in or enter a name first.</p>
+                    </div>
+                    <div class="playFields">
+                        <label for="nameInput">Your name <span class="muted">(optional)</span></label>
+                        <input id="nameInput" type="text" maxlength="18" placeholder="e.g. Jam" autocomplete="off" />
+                        <button class="btnPlay" id="btnStart">▶&nbsp; Play Now</button>
+                    </div>
+                    <div class="tipsRow">
+                        <div class="tipCard"><div class="tipIco">🖱</div><div><b>Steer</b> with mouse or touch</div></div>
+                        <div class="tipCard"><div class="tipIco">⚡</div><div><b>Hold</b> to boost (costs mass)</div></div>
+                        <div class="tipCard"><div class="tipIco">💀</div><div><b>Cut off</b> rivals to score kills</div></div>
+                    </div>
+                </div>
+
+                <!-- HOW TO PLAY -->
+                <div class="lView" id="lobbyViewInfo" hidden>
+                    <div class="lViewHead">
+                        <h2>How to Play</h2>
+                        <p>Master the controls, then hunt down everyone else.</p>
+                    </div>
+                    <div class="infoColumns">
+                        <div class="infoCol">
+                            <div class="infoColTitle">Controls</div>
+                            <div class="infoRow"><b>Mouse / Touch</b><span>Steer your worm</span></div>
+                            <div class="infoRow"><b>Hold click / touch</b><span>Boost (costs mass)</span></div>
+                            <div class="infoRow"><b>W or Space</b><span>Boost (keyboard)</span></div>
+
+                            <div class="infoColTitle" style="margin-top:20px;">Objective</div>
+                            <p class="infoP">Eat pellets to grow. Avoid crashing your <b>head</b> into any worm — including your own tail. Force rivals into your body to score kills.</p>
+                        </div>
+                        <div class="infoCol">
+                            <div class="infoColTitle">Power-ups</div>
+                            <div class="puList">
+                                <div class="puRow"><span class="puBadge accent">Shield</span><span>Blocks one fatal hit (score penalty applies)</span></div>
+                                <div class="puRow"><span class="puBadge accent">Magnet</span><span>Pulls nearby pellets toward you</span></div>
+                                <div class="puRow"><span class="puBadge accent">Haste</span><span>Temporary speed boost</span></div>
+                                <div class="puRow"><span class="puBadge accent">2×</span><span>Double mass gain for a short time</span></div>
+                                <div class="puRow"><span class="puBadge accent">Zoom</span><span>Temporary zoom-out ability</span></div>
+                                <div class="puRow"><span class="puBadge danger">Bomb</span><span>Score, mass &amp; size penalty on pickup</span></div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- INFO VIEW -->
-                <div class="lobbyView" id="lobbyViewInfo" role="tabpanel" aria-labelledby="lobbyTabInfo" hidden>
-                    <div class="lobbyPanel">
-                        <div class="infoGrid">
-                            <div class="infoBlock">
-                                <div class="infoTitle">Controls</div>
-                                <div class="infoLine"><b>Mouse / Touch:</b> move cursor / drag to steer.</div>
-                                <div class="infoLine"><b>Hold click / touch:</b> Boost (costs mass).</div>
-                                <div class="infoLine"><b>W or Space:</b> Boost (keyboard).</div>
-                            </div>
-                            <div class="infoBlock">
-                                <div class="infoTitle">Objective</div>
-                                <div class="infoLine">Eat pellets to grow. Avoid crashing your <b>head</b> into any worm's body — including your own.</div>
-                                <div class="infoLine">Cut off other worms to make them crash into you.</div>
-                            </div>
-                            <div class="infoBlock">
-                                <div class="infoTitle">Power-ups</div>
-                                <div class="infoLine"><b>Shield:</b> blocks one fatal hit (but you still take a
-                                    Score Penalty when hit).</div>
-                                <div class="infoLine"><b>Magnet:</b> pulls nearby pellets toward you.</div>
-                                <div class="infoLine"><b>Haste:</b> temporary speed boost.</div>
-                                <div class="infoLine"><b>2×:</b> double mass gain for a short time.</div>
-                                <div class="infoLine"><b>Zoom:</b> Gain temporary zoom-out ability.</div>
-                                <div class="infoLine"><b>Bomb:</b> Score, Mass and Size Penalty when pick up.</div>
+                <!-- CUSTOMIZE -->
+                <div class="lView" id="lobbyViewCustomize" hidden>
+                    <div class="lViewHead">
+                        <h2>Customize</h2>
+                        <p>Style your worm before the game starts.</p>
+                    </div>
+                    <div class="customLayout">
+                        <!-- LEFT: controls -->
+                        <div class="customControls">
+                            <div class="customSections">
+                                <div class="customSection">
+                                    <div class="customSectionTitle">Colors</div>
+                                    <div class="colorRow">
+                                        <label class="colorLabel">
+                                            <span>Worm color</span>
+                                            <input id="colorInput" type="color" value="#7cf7b6" />
+                                        </label>
+                                        <label class="colorLabel">
+                                            <span>Accent color</span>
+                                            <input id="accentColorInput" type="color" value="#ffffff" />
+                                        </label>
+                                        <label class="colorLabel">
+                                            <span>Arena color</span>
+                                            <input id="arenaColorInput" type="color" value="#101a33" />
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="customSection">
+                                    <div class="customSectionTitle">Skin Pattern</div>
+                                    <div class="patternGrid" id="patternGrid">
+                                        <button class="patternBtn active" data-value="solid">
+                                            <canvas class="patternThumb" id="pt_solid" width="52" height="32"></canvas>
+                                            <span>Solid</span>
+                                        </button>
+                                        <button class="patternBtn" data-value="stripe">
+                                            <canvas class="patternThumb" id="pt_stripe" width="52" height="32"></canvas>
+                                            <span>Stripe</span>
+                                        </button>
+                                        <button class="patternBtn" data-value="pulse">
+                                            <canvas class="patternThumb" id="pt_pulse" width="52" height="32"></canvas>
+                                            <span>Pulse</span>
+                                        </button>
+                                        <button class="patternBtn" data-value="dots">
+                                            <canvas class="patternThumb" id="pt_dots" width="52" height="32"></canvas>
+                                            <span>Dots</span>
+                                        </button>
+                                        <button class="patternBtn" data-value="gradient">
+                                            <canvas class="patternThumb" id="pt_gradient" width="52" height="32"></canvas>
+                                            <span>Gradient</span>
+                                        </button>
+                                        <button class="patternBtn" data-value="rainbow">
+                                            <canvas class="patternThumb" id="pt_rainbow" width="52" height="32"></canvas>
+                                            <span>Rainbow</span>
+                                        </button>
+                                        <button class="patternBtn" data-value="camo">
+                                            <canvas class="patternThumb" id="pt_camo" width="52" height="32"></canvas>
+                                            <span>Camo</span>
+                                        </button>
+                                        <button class="patternBtn" data-value="neon">
+                                            <canvas class="patternThumb" id="pt_neon" width="52" height="32"></canvas>
+                                            <span>Neon</span>
+                                        </button>
+                                    </div>
+                                    <!-- hidden select keeps game.js compatibility -->
+                                    <select id="patternSelect" style="display:none;">
+                                        <option value="solid" selected>Solid</option>
+                                        <option value="stripe">Stripes</option>
+                                        <option value="pulse">Pulse</option>
+                                        <option value="dots">Dots</option>
+                                        <option value="gradient">Gradient</option>
+                                        <option value="rainbow">Rainbow</option>
+                                        <option value="camo">Camo</option>
+                                        <option value="neon">Neon</option>
+                                    </select>
+                                </div>
+
+                                <div class="customSection">
+                                    <div class="customSectionTitle">Eye Style</div>
+                                    <div class="eyeGrid" id="eyeStyleGrid">
+                                        <button class="eyeBtn active" data-eye="default">
+                                            <svg width="44" height="22" viewBox="0 0 44 22">
+                                                <!-- Classic: two white eyes with dark pupils, side by side -->
+                                                <circle cx="13" cy="11" r="8" fill="white"/>
+                                                <circle cx="31" cy="11" r="8" fill="white"/>
+                                                <circle cx="15" cy="11" r="4.5" fill="#111"/>
+                                                <circle cx="33" cy="11" r="4.5" fill="#111"/>
+                                                <circle cx="16.5" cy="9" r="1.5" fill="white"/>
+                                                <circle cx="34.5" cy="9" r="1.5" fill="white"/>
+                                            </svg>
+                                            <span>Classic</span>
+                                        </button>
+                                        <button class="eyeBtn" data-eye="angry">
+                                            <svg width="44" height="22" viewBox="0 0 44 22">
+                                                <!-- Angry: red pupils, slanted brows -->
+                                                <circle cx="13" cy="12" r="7.5" fill="white"/>
+                                                <circle cx="31" cy="12" r="7.5" fill="white"/>
+                                                <circle cx="14.5" cy="12.5" r="4" fill="#cc0000"/>
+                                                <circle cx="32.5" cy="12.5" r="4" fill="#cc0000"/>
+                                                <line x1="5" y1="4" x2="21" y2="7.5" stroke="#cc0000" stroke-width="2.2" stroke-linecap="round"/>
+                                                <line x1="23" y1="7.5" x2="39" y2="4" stroke="#cc0000" stroke-width="2.2" stroke-linecap="round"/>
+                                            </svg>
+                                            <span>Angry</span>
+                                        </button>
+                                        <button class="eyeBtn" data-eye="cute">
+                                            <svg width="44" height="22" viewBox="0 0 44 22">
+                                                <!-- Cute: big eyes, rosy cheeks -->
+                                                <circle cx="13" cy="10" r="8" fill="white"/>
+                                                <circle cx="31" cy="10" r="8" fill="white"/>
+                                                <circle cx="14.5" cy="10.5" r="4.5" fill="#555"/>
+                                                <circle cx="32.5" cy="10.5" r="4.5" fill="#555"/>
+                                                <circle cx="16" cy="8.5" r="1.6" fill="white"/>
+                                                <circle cx="34" cy="8.5" r="1.6" fill="white"/>
+                                                <circle cx="9" cy="20" r="4.5" fill="rgba(255,100,150,.4)"/>
+                                                <circle cx="35" cy="20" r="4.5" fill="rgba(255,100,150,.4)"/>
+                                            </svg>
+                                            <span>Cute</span>
+                                        </button>
+                                        <button class="eyeBtn" data-eye="alien">
+                                            <svg width="44" height="22" viewBox="0 0 44 22">
+                                                <!-- Alien: almond-shaped green eyes -->
+                                                <ellipse cx="13" cy="11" rx="10" ry="7" fill="#7cf7b6"/>
+                                                <ellipse cx="31" cy="11" rx="10" ry="7" fill="#7cf7b6"/>
+                                                <ellipse cx="13.5" cy="11" rx="5.5" ry="5" fill="#023a1a"/>
+                                                <ellipse cx="31.5" cy="11" rx="5.5" ry="5" fill="#023a1a"/>
+                                                <circle cx="15.5" cy="8.5" r="2" fill="rgba(124,247,182,.6)"/>
+                                                <circle cx="33.5" cy="8.5" r="2" fill="rgba(124,247,182,.6)"/>
+                                            </svg>
+                                            <span>Alien</span>
+                                        </button>
+                                        <button class="eyeBtn" data-eye="cool">
+                                            <svg width="44" height="22" viewBox="0 0 44 22">
+                                                <!-- Cool: sunglasses with bridge -->
+                                                <rect x="3" y="6" width="17" height="11" rx="4" fill="#1a1a2e" stroke="#888" stroke-width="1"/>
+                                                <rect x="24" y="6" width="17" height="11" rx="4" fill="#1a1a2e" stroke="#888" stroke-width="1"/>
+                                                <line x1="20" y1="11" x2="24" y2="11" stroke="#888" stroke-width="1.5"/>
+                                                <ellipse cx="9" cy="10" rx="4.5" ry="2.2" fill="rgba(255,255,255,.15)"/>
+                                                <ellipse cx="30" cy="10" rx="4.5" ry="2.2" fill="rgba(255,255,255,.15)"/>
+                                            </svg>
+                                            <span>Cool</span>
+                                        </button>
+                                        <button class="eyeBtn" data-eye="sleepy">
+                                            <svg width="44" height="22" viewBox="0 0 44 22">
+                                                <!-- Sleepy: half-closed eyes -->
+                                                <circle cx="13" cy="12" r="8" fill="white"/>
+                                                <circle cx="31" cy="12" r="8" fill="white"/>
+                                                <circle cx="13" cy="13.5" r="4.5" fill="#555"/>
+                                                <circle cx="31" cy="13.5" r="4.5" fill="#555"/>
+                                                <!-- eyelid cover -->
+                                                <rect x="4" y="3" width="18" height="9" fill="#0d1f35" rx="1"/>
+                                                <rect x="22" y="3" width="18" height="9" fill="#0d1f35" rx="1"/>
+                                                <!-- droopy arc -->
+                                                <path d="M5 12 Q13 7 21 12" stroke="rgba(180,180,200,.7)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                                                <path d="M23 12 Q31 7 39 12" stroke="rgba(180,180,200,.7)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                                            </svg>
+                                            <span>Sleepy</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="customSection">
+                                    <div class="customSectionTitle">Trail Effect</div>
+                                    <div class="trailGrid" id="trailGrid">
+                                        <button class="trailBtn active" data-trail="none"><span class="trailIcon">—</span><span>None</span></button>
+                                        <button class="trailBtn" data-trail="sparkle"><span class="trailIcon">✦</span><span>Sparkle</span></button>
+                                        <button class="trailBtn" data-trail="fire"><span class="trailIcon">🔥</span><span>Fire</span></button>
+                                        <button class="trailBtn" data-trail="ice"><span class="trailIcon">❄</span><span>Ice</span></button>
+                                        <button class="trailBtn" data-trail="ghost"><span class="trailIcon">👻</span><span>Ghost</span></button>
+                                        <button class="trailBtn" data-trail="star"><span class="trailIcon">⭐</span><span>Stars</span></button>
+                                    </div>
+                                </div>
+
+                                <div class="customSection">
+                                    <div class="customSectionTitle">Audio</div>
+                                    <div class="toggleRow">
+                                        <label class="toggle"><input id="musicToggle" type="checkbox" checked /><span>Music (8-bit)</span></label>
+                                        <label class="toggle"><input id="sfxToggle" type="checkbox" checked /><span>Sound effects</span></label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="footer footerLobby">
-                            <span class="muted">Created by: James Tercenio</span>
-                            <span class="muted">v1.0.23</span>
+                        <!-- RIGHT: live preview -->
+                        <div class="customPreviewCol">
+                            <div class="previewLabel">Live Preview</div>
+                            <div class="previewBox">
+                                <canvas id="wormPreviewCanvas" width="260" height="200"></canvas>
+                            </div>
+                            <div class="previewInfo" id="previewInfo">
+                                <span id="previewName">Your Worm</span>
+                                <span class="previewPattern" id="previewPattern">Solid</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- CUSTOMIZE VIEW -->
-                <div class="lobbyView" id="lobbyViewCustomize" role="tabpanel" aria-labelledby="lobbyTabCustomize"
-                    hidden>
-                    <div class="lobbyPanel">
-                        <div class="panelTitle">Customize</div>
-
-                        <div class="colorRow">
-                            <div class="field">
-                                <label for="colorInput">Worm color</label>
-                                <input id="colorInput" type="color" value="#7cf7b6" />
-                            </div>
-                            <div class="field">
-                                <label for="arenaColorInput">Arena color</label>
-                                <input id="arenaColorInput" type="color" value="#101a33" />
-                            </div>
-                        </div>
-
-                        <div class="patternRow">
-                            <div class="field wide">
-                                <label for="patternSelect">Worm pattern</label>
-                                <select id="patternSelect">
-                                    <option value="solid" selected>Solid</option>
-                                    <option value="stripe">Stripes</option>
-                                    <option value="pulse">Pulse</option>
-                                    <option value="dots">Dots</option>
-                                    <option value="gradient">Gradient</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="toggles">
-                            <label class="toggle"><input id="musicToggle" type="checkbox" checked /> Music
-                                (8-bit)</label>
-                            <label class="toggle"><input id="sfxToggle" type="checkbox" checked /> SFX</label>
-                        </div>
+                <!-- LEADERBOARD -->
+                <div class="lView" id="lobbyViewLeaderboard" hidden>
+                    <div class="lViewHead">
+                        <h2>Leaderboard <span class="muted">— Top 50</span></h2>
+                        <p>All-time best scores. Yours is saved automatically on death.</p>
+                    </div>
+                    <div class="lbToolbar">
+                        <span class="muted" id="lbStatus">Press Refresh to load.</span>
+                        <button class="btnSecondary sm" id="btnLbRefresh">↺ Refresh</button>
+                    </div>
+                    <div class="lbTable" id="lbBox">
+                        <div class="lbEmpty">No data yet.</div>
                     </div>
                 </div>
 
-                <!-- LEADERBOARD VIEW -->
-                <div class="lobbyView" id="lobbyViewLeaderboard" role="tabpanel" aria-labelledby="lobbyTabLeaderboard"
-                    hidden>
-                    <div class="lobbyPanel">
-                        <div class="panelTitle">Leaderboard <span class="muted">(Top 50)</span></div>
-
-                        <div class="leaderboardMeta">
-                            <span class="muted" id="lbStatus">Press Refresh to load.</span>
-                            <button class="secondary mini" id="btnLbRefresh" type="button">Refresh</button>
-                        </div>
-
-                        <div class="leaderboardBox" id="lbBox">
-                            <div class="lbEmpty muted">No data yet.</div>
-                        </div>
-
-                        <div class="footer footerLobby">
-                            <span class="muted">Scores save on death.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </main>
         </div>
     </div>
 
+    <!-- DEATH OVERLAY -->
     <div class="overlay" id="deadOverlay" style="display:none;">
-        <div class="card">
-            <h1 class="deathline">You died</h1>
-            <p>Your worm burst into pellets. Try again and stay off other worms.</p>
-            <div class="grid">
-                <div>Score: <span id="finalScore" class="pill">0</span></div>
-                <div>Worms killed: <span id="finalKills" class="pill">0</span></div>
-            </div>
-            <div class="saveScore" id="saveScoreWrap" style="margin-top:12px;">
-                <div class="muted" id="saveScoreHint" style="margin-bottom:6px;">Saving score…</div>
-                <div class="saveRow" id="saveRow" style="display:none;">
-                    <input id="deadNameInput" type="text" maxlength="18" placeholder="Enter your name to save" />
-                    <button class="primary" id="btnSaveScore" type="button">Save</button>
+        <div class="deathModal">
+            <div class="deathTop">
+                <div class="deathX">✕</div>
+                <div>
+                    <h2 class="deathTitle">You Died</h2>
+                    <p class="deathSub">Your worm exploded into pellets.</p>
                 </div>
-                <div class="muted" id="saveStatus" style="margin-top:6px;"></div>
             </div>
-
-            <div class="btnrow">
-                <button class="primary" id="btnRestart">Restart</button>
-                <button class="secondary" id="btnBack">Back to Start</button>
+            <div class="deathStats">
+                <div class="ds"><div class="dsLabel">Score</div><div class="dsVal" id="finalScore">0</div></div>
+                <div class="dsDivider"></div>
+                <div class="ds"><div class="dsLabel">Worms Killed</div><div class="dsVal" id="finalKills">0</div></div>
             </div>
-            <div class="footer">
-                <span class="muted">Created By: James Tercenio</span>
-                <span class="muted">freeworm.io</span>
+            <div id="saveScoreWrap" class="saveWrap">
+                <div class="muted" id="saveScoreHint">Saving score…</div>
+                <div class="saveRow" id="saveRow" style="display:none;">
+                    <input id="deadNameInput" type="text" maxlength="18" placeholder="Name to save score" />
+                    <button class="btnPrimary" id="btnSaveScore">Save</button>
+                </div>
+                <div class="muted" id="saveStatus"></div>
             </div>
+            <div class="deathActions">
+                <button class="btnPlay" id="btnRestart">▶&nbsp; Play Again</button>
+                <button class="btnSecondary" id="btnBack">← Back</button>
+            </div>
+            <div class="deathFt"><span class="muted">freeworm.io · by James Tercenio</span></div>
         </div>
     </div>
 
     <script src="game.js"></script>
-</body>
+    <script>
+    (() => {
+        /* INTRO */
+        const scr = document.getElementById('introScreen');
+        const cv  = document.getElementById('introCanvas');
+        const cx  = cv.getContext('2d');
+        let raf, t0, pts = [];
+        const resize = () => { cv.width = innerWidth; cv.height = innerHeight; };
+        resize(); addEventListener('resize', resize);
+        for (let i = 0; i < 90; i++) pts.push({
+            x: Math.random()*innerWidth, y: Math.random()*innerHeight,
+            r: Math.random()*3+1.5, vx:(Math.random()-.5)*.5, vy:(Math.random()-.5)*.5,
+            h: Math.random()*60+140, a: Math.random()*.55+.25
+        });
+        (function frame(ts) {
+            if (!t0) t0=ts;
+            cx.clearRect(0,0,cv.width,cv.height);
+            cx.strokeStyle='rgba(124,247,182,.03)'; cx.lineWidth=1;
+            for (let x=0;x<cv.width;x+=48){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,cv.height);cx.stroke();}
+            for (let y=0;y<cv.height;y+=48){cx.beginPath();cx.moveTo(0,y);cx.lineTo(cv.width,y);cx.stroke();}
+            for (const p of pts) {
+                p.x+=p.vx; p.y+=p.vy;
+                if(p.x<-8)p.x=cv.width+8; if(p.x>cv.width+8)p.x=-8;
+                if(p.y<-8)p.y=cv.height+8; if(p.y>cv.height+8)p.y=-8;
+                const g=cx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*4);
+                g.addColorStop(0,`hsla(${p.h},100%,72%,${p.a})`);
+                g.addColorStop(1,`hsla(${p.h},100%,72%,0)`);
+                cx.beginPath(); cx.arc(p.x,p.y,p.r*4,0,Math.PI*2); cx.fillStyle=g; cx.fill();
+                cx.beginPath(); cx.arc(p.x,p.y,p.r,0,Math.PI*2);
+                cx.fillStyle=`hsla(${p.h},100%,88%,${p.a})`; cx.fill();
+            }
+            raf = requestAnimationFrame(frame);
+        })(0);
+        setTimeout(()=>{
+            scr.classList.add('done');
+            setTimeout(()=>{
+                cancelAnimationFrame(raf);
+                scr.style.display='none';
+                document.getElementById('startOverlay').style.display='flex';
+            }, 550);
+        }, 2600);
 
+        /* LOBBY TABS */
+        document.querySelectorAll('.sideTab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.sideTab').forEach(b=>b.classList.remove('active'));
+                document.querySelectorAll('.lView').forEach(v=>{v.hidden=true;v.classList.remove('active');});
+                btn.classList.add('active');
+                const v = document.getElementById(btn.dataset.target);
+                if (v) { v.hidden=false; v.classList.add('active'); }
+                // Resize preview canvas when switching to customize
+                if (btn.dataset.target === 'lobbyViewCustomize') {
+                    setTimeout(() => { if (typeof resizePreviewCanvas === 'function') resizePreviewCanvas(); }, 30);
+                }
+            });
+        });
+
+        /* ── CUSTOMIZE PANEL ── */
+        const colorInput = document.getElementById('colorInput');
+        const accentColorInput = document.getElementById('accentColorInput');
+        const patternSelect = document.getElementById('patternSelect');
+        const previewCanvas = document.getElementById('wormPreviewCanvas');
+        const pctx = previewCanvas ? previewCanvas.getContext('2d') : null;
+        let customState = {
+            color: colorInput ? colorInput.value : '#7cf7b6',
+            accent: accentColorInput ? accentColorInput.value : '#ffffff',
+            pattern: 'solid',
+            eye: 'default',
+            trail: 'none'
+        };
+
+        // Pattern thumbnails
+        function hexToRgb(hex) {
+            const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+            return { r, g, b };
+        }
+        function drawPatternThumb(id, pattern, color) {
+            const c = document.getElementById(id);
+            if (!c) return;
+            const ctx = c.getContext('2d');
+            const W = c.width, H = c.height;
+            const base = hexToRgb(color);
+            const darker = { r: Math.max(0,base.r-40), g: Math.max(0,base.g-40), b: Math.max(0,base.b-40) };
+            const lighter = { r: Math.min(255,base.r+40), g: Math.min(255,base.g+40), b: Math.min(255,base.b+40) };
+            ctx.clearRect(0,0,W,H);
+            // draw horizontal worm segments
+            const segW = 8, segH = H * 0.6, segY = (H - segH) / 2;
+            const count = Math.floor(W / (segW + 2));
+            for (let i = 0; i < count; i++) {
+                let r, g, b;
+                if (pattern === 'stripe') {
+                    const on = (Math.floor(i / 1) % 2) === 0;
+                    ({ r, g, b } = on ? base : darker);
+                } else if (pattern === 'pulse') {
+                    const p = 0.5 + 0.5 * Math.sin(i * 0.7);
+                    r = Math.round(darker.r + (lighter.r - darker.r) * p);
+                    g = Math.round(darker.g + (lighter.g - darker.g) * p);
+                    b = Math.round(darker.b + (lighter.b - darker.b) * p);
+                } else if (pattern === 'dots') {
+                    ({ r, g, b } = (i % 3 === 0) ? lighter : base);
+                } else if (pattern === 'gradient') {
+                    const t = i / Math.max(1, count - 1);
+                    r = Math.round(lighter.r + (darker.r - lighter.r) * t);
+                    g = Math.round(lighter.g + (darker.g - lighter.g) * t);
+                    b = Math.round(lighter.b + (darker.b - lighter.b) * t);
+                } else if (pattern === 'rainbow') {
+                    const h = (i / count) * 360;
+                    ctx.fillStyle = `hsl(${h},100%,62%)`;
+                    const rx = i * (segW + 2), ry = segY + (i % 2 === 0 ? 0 : 2), rh = segH - (i % 2 === 0 ? 0 : 2);
+                    ctx.beginPath(); ctx.roundRect(rx, ry, segW, rh, 3); ctx.fill();
+                    continue;
+                } else if (pattern === 'camo') {
+                    const cols = [base, darker, {r:Math.max(0,base.r-60),g:Math.max(0,base.g+20),b:Math.max(0,base.b-40)}];
+                    ({ r, g, b } = cols[i % 3]);
+                } else if (pattern === 'neon') {
+                    const grd = ctx.createRadialGradient(i*(segW+2)+segW/2, H/2, 0, i*(segW+2)+segW/2, H/2, segW*2);
+                    grd.addColorStop(0, `rgba(${lighter.r},${lighter.g},${lighter.b},1)`);
+                    grd.addColorStop(1, `rgba(${base.r},${base.g},${base.b},0.3)`);
+                    ctx.fillStyle = grd;
+                    ctx.beginPath(); ctx.roundRect(i*(segW+2), segY, segW, segH, 3); ctx.fill();
+                    continue;
+                } else {
+                    ({ r, g, b } = base);
+                }
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                const oy = i % 2 === 0 ? 0 : 2;
+                ctx.beginPath(); ctx.roundRect(i*(segW+2), segY+oy, segW, segH-oy, 3); ctx.fill();
+            }
+            // head circle
+            const hx = count * (segW + 2) - 4, hy = H / 2;
+            ctx.beginPath(); ctx.arc(hx, hy, segH/2 * 1.1, 0, Math.PI*2);
+            ctx.fillStyle = `rgb(${base.r},${base.g},${base.b})`; ctx.fill();
+        }
+
+        function refreshPatternThumbs() {
+            const patterns = ['solid','stripe','pulse','dots','gradient','rainbow','camo','neon'];
+            patterns.forEach(p => drawPatternThumb('pt_' + p, p, customState.color));
+        }
+
+        // Live worm preview
+        let previewAnim = 0;
+        function resizePreviewCanvas() {
+            if (!previewCanvas) return;
+            const box = previewCanvas.parentElement;
+            if (!box) return;
+            const w = box.clientWidth || 260;
+            const h = Math.round(w * 0.72);
+            previewCanvas.width = w;
+            previewCanvas.height = h;
+            previewCanvas.style.width = w + 'px';
+            previewCanvas.style.height = h + 'px';
+        }
+        window.addEventListener('resize', resizePreviewCanvas);
+        // Defer so layout is complete
+        setTimeout(resizePreviewCanvas, 100);
+
+        function drawWormPreview(ts) {
+            if (!pctx) return;
+            previewAnim = (ts || 0) * 0.001;
+            const W = previewCanvas.width, H = previewCanvas.height;
+            pctx.clearRect(0,0,W,H);
+
+            // arena bg
+            pctx.fillStyle = '#060e1c';
+            pctx.fillRect(0,0,W,H);
+
+            // grid
+            pctx.strokeStyle = 'rgba(124,247,182,.04)'; pctx.lineWidth = 1;
+            for (let x=0;x<W;x+=20){pctx.beginPath();pctx.moveTo(x,0);pctx.lineTo(x,H);pctx.stroke();}
+            for (let y=0;y<H;y+=20){pctx.beginPath();pctx.moveTo(0,y);pctx.lineTo(W,y);pctx.stroke();}
+
+            // worm path: sinusoidal
+            const base = hexToRgb(customState.color);
+            const darker = { r: Math.max(0,base.r-40), g: Math.max(0,base.g-40), b: Math.max(0,base.b-40) };
+            const lighter = { r: Math.min(255,base.r+40), g: Math.min(255,base.g+40), b: Math.min(255,base.b+40) };
+            const segCount = 22;
+            const segR = 11;
+            const segments = [];
+            for (let i = 0; i < segCount; i++) {
+                const t = i / (segCount - 1);
+                const x = W * 0.82 - i * 10.5;
+                const y = H * 0.5 + Math.sin((t * Math.PI * 1.5) + previewAnim * 2) * 36;
+                segments.push({ x, y });
+            }
+
+            // trail effect
+            if (customState.trail !== 'none') {
+                const last = segments[segments.length - 1];
+                const trailCols = { sparkle:'rgba(255,220,50,.6)', fire:'rgba(255,100,0,.6)', ice:'rgba(120,200,255,.6)', ghost:'rgba(200,200,255,.35)', star:'rgba(255,240,100,.7)' };
+                const col = trailCols[customState.trail] || 'rgba(255,255,255,.4)';
+                for (let k = 0; k < 5; k++) {
+                    const ox = last.x - k * 4 + (Math.random()-0.5)*6;
+                    const oy = last.y + (Math.random()-0.5)*12;
+                    const pr = (3 - k * 0.5) * (0.5 + 0.5 * Math.sin(previewAnim*3 + k));
+                    if (pr <= 0) continue;
+                    pctx.beginPath(); pctx.arc(ox, oy, pr, 0, Math.PI*2);
+                    pctx.fillStyle = col; pctx.fill();
+                }
+            }
+
+            // body segments (draw back-to-front)
+            for (let i = segCount - 1; i >= 0; i--) {
+                const seg = segments[i];
+                const frac = i / (segCount - 1);
+                let r, g, b;
+                const pat = customState.pattern;
+                if (pat === 'stripe') { const on = (Math.floor(i/2)%2)===0; ({r,g,b} = on ? base : darker); }
+                else if (pat === 'pulse') { const p = 0.5+0.5*Math.sin(i*0.55+previewAnim*4); r=Math.round(darker.r+(lighter.r-darker.r)*p); g=Math.round(darker.g+(lighter.g-darker.g)*p); b=Math.round(darker.b+(lighter.b-darker.b)*p); }
+                else if (pat === 'dots') { ({r,g,b} = (i%5===0)?lighter:base); }
+                else if (pat === 'gradient') { const t=i/(segCount-1); r=Math.round(lighter.r+(darker.r-lighter.r)*t); g=Math.round(lighter.g+(darker.g-lighter.g)*t); b=Math.round(lighter.b+(darker.b-lighter.b)*t); }
+                else if (pat === 'rainbow') { const hue=(i/segCount)*360; pctx.beginPath(); pctx.arc(seg.x,seg.y,segR*0.92,0,Math.PI*2); pctx.fillStyle=`hsl(${hue},100%,62%)`; pctx.fill(); continue; }
+                else if (pat === 'camo') { const cols=[base,darker,{r:Math.max(0,base.r-60),g:Math.max(0,base.g+20),b:Math.max(0,base.b-40)}]; ({r,g,b}=cols[i%3]); }
+                else if (pat === 'neon') { const grd=pctx.createRadialGradient(seg.x,seg.y,0,seg.x,seg.y,segR*2); grd.addColorStop(0,`rgba(${lighter.r},${lighter.g},${lighter.b},1)`); grd.addColorStop(1,`rgba(${base.r},${base.g},${base.b},0)`); pctx.beginPath(); pctx.arc(seg.x,seg.y,segR,0,Math.PI*2); pctx.fillStyle=grd; pctx.fill(); continue; }
+                else { ({r,g,b} = base); }
+                const scale = (i === 0) ? 1.15 : (1 - frac * 0.25);
+                pctx.beginPath(); pctx.arc(seg.x, seg.y, segR * scale, 0, Math.PI*2);
+                pctx.fillStyle = `rgb(${r},${g},${b})`; pctx.fill();
+            }
+
+            // Head
+            const head = segments[0];
+            pctx.beginPath(); pctx.arc(head.x, head.y, segR * 1.18, 0, Math.PI*2);
+            pctx.fillStyle = `rgb(${base.r},${base.g},${base.b})`; pctx.fill();
+
+            // Eyes
+            drawPreviewEyes(pctx, head, customState.eye, segR, segments[1]);
+
+            // Name tag
+            const playerName = (document.getElementById('nameInput') || {}).value || 'Your Worm';
+            pctx.font = 'bold 11px DM Sans, sans-serif';
+            pctx.textAlign = 'center';
+            pctx.textBaseline = 'bottom';
+            pctx.fillStyle = 'rgba(255,255,255,.7)';
+            pctx.fillText(playerName || 'You', head.x, head.y - segR * 1.4);
+        }
+
+        function drawPreviewEyes(ctx, head, style, r, seg1) {
+            // Compute head direction from head vs next segment
+            const dx = (seg1 ? head.x - seg1.x : 1);
+            const dy = (seg1 ? head.y - seg1.y : 0);
+            const len = Math.sqrt(dx*dx+dy*dy) || 1;
+            const nx = dx/len, ny = dy/len;        // forward unit vector
+            const px_  = -ny, py_ = nx;            // perpendicular (left)
+
+            // Eye offset: forward + perpendicular spread
+            const fwd = r * 0.38;   // forward along head direction
+            const spread = r * 0.38; // perpendicular spread between eyes
+            const eyeR = r * 0.32;
+
+            const e1x = head.x + nx*fwd + px_*spread;
+            const e1y = head.y + ny*fwd + py_*spread;
+            const e2x = head.x + nx*fwd - px_*spread;
+            const e2y = head.y + ny*fwd - py_*spread;
+            const eyes = [[e1x, e1y], [e2x, e2y]];
+
+            if (style === 'default') {
+                eyes.forEach(([ex, ey]) => {
+                    ctx.beginPath(); ctx.arc(ex, ey, eyeR, 0, Math.PI*2); ctx.fillStyle='white'; ctx.fill();
+                    ctx.beginPath(); ctx.arc(ex + nx*eyeR*0.3, ey + ny*eyeR*0.3, eyeR*0.55, 0, Math.PI*2); ctx.fillStyle='#111'; ctx.fill();
+                    ctx.beginPath(); ctx.arc(ex + nx*eyeR*0.45, ey + ny*eyeR*0.45 - eyeR*0.2, eyeR*0.18, 0, Math.PI*2); ctx.fillStyle='white'; ctx.fill();
+                });
+            } else if (style === 'cute') {
+                eyes.forEach(([ex, ey]) => {
+                    ctx.beginPath(); ctx.arc(ex, ey, eyeR, 0, Math.PI*2); ctx.fillStyle='white'; ctx.fill();
+                    ctx.beginPath(); ctx.arc(ex + nx*eyeR*0.25, ey + ny*eyeR*0.25, eyeR*0.52, 0, Math.PI*2); ctx.fillStyle='#555'; ctx.fill();
+                    ctx.beginPath(); ctx.arc(ex + nx*eyeR*0.4, ey + ny*eyeR*0.4 - eyeR*0.18, eyeR*0.17, 0, Math.PI*2); ctx.fillStyle='white'; ctx.fill();
+                });
+                // rosy cheeks — below eyes
+                eyes.forEach(([ex, ey]) => {
+                    ctx.beginPath(); ctx.arc(ex - nx*eyeR*0.2, ey - ny*eyeR*0.2 + eyeR*0.85, eyeR*0.55, 0, Math.PI*2); ctx.fillStyle='rgba(255,100,150,.32)'; ctx.fill();
+                });
+            } else if (style === 'angry') {
+                eyes.forEach(([ex, ey]) => {
+                    ctx.beginPath(); ctx.arc(ex, ey, eyeR, 0, Math.PI*2); ctx.fillStyle='white'; ctx.fill();
+                    ctx.beginPath(); ctx.arc(ex + nx*eyeR*0.3, ey + ny*eyeR*0.3, eyeR*0.55, 0, Math.PI*2); ctx.fillStyle='#cc0000'; ctx.fill();
+                });
+                // furrowed brows — slanted inward
+                ctx.strokeStyle='#cc0000'; ctx.lineWidth=Math.max(1.5, eyeR*0.35);
+                const bx1s = e1x - px_*eyeR*1.0 - nx*eyeR*0.5;
+                const by1s = e1y - py_*eyeR*1.0 - ny*eyeR*0.5;
+                const bx1e = e1x + px_*eyeR*0.5 - nx*eyeR*0.2;
+                const by1e = e1y + py_*eyeR*0.5 - ny*eyeR*0.2;
+                ctx.beginPath(); ctx.moveTo(bx1s, by1s); ctx.lineTo(bx1e, by1e); ctx.stroke();
+                const bx2s = e2x + px_*eyeR*1.0 - nx*eyeR*0.5;
+                const by2s = e2y + py_*eyeR*1.0 - ny*eyeR*0.5;
+                const bx2e = e2x - px_*eyeR*0.5 - nx*eyeR*0.2;
+                const by2e = e2y - py_*eyeR*0.5 - ny*eyeR*0.2;
+                ctx.beginPath(); ctx.moveTo(bx2s, by2s); ctx.lineTo(bx2e, by2e); ctx.stroke();
+            } else if (style === 'alien') {
+                eyes.forEach(([ex, ey]) => {
+                    // almond-shaped alien eye aligned to head direction
+                    ctx.save();
+                    ctx.translate(ex, ey);
+                    ctx.rotate(Math.atan2(ny, nx));
+                    ctx.beginPath(); ctx.ellipse(0, 0, eyeR*1.35, eyeR*0.7, 0, 0, Math.PI*2); ctx.fillStyle='#7cf7b6'; ctx.fill();
+                    ctx.beginPath(); ctx.ellipse(eyeR*0.1, 0, eyeR*0.65, eyeR*0.55, 0, 0, Math.PI*2); ctx.fillStyle='#023a1a'; ctx.fill();
+                    ctx.beginPath(); ctx.arc(eyeR*0.25, -eyeR*0.15, eyeR*0.18, 0, Math.PI*2); ctx.fillStyle='rgba(124,247,182,.6)'; ctx.fill();
+                    ctx.restore();
+                });
+            } else if (style === 'cool') {
+                // sunglasses — dark rects with slight rotation
+                eyes.forEach(([ex, ey]) => {
+                    ctx.save();
+                    ctx.translate(ex, ey);
+                    ctx.rotate(Math.atan2(ny, nx));
+                    ctx.fillStyle='#1a1a2e';
+                    ctx.strokeStyle='#888';
+                    ctx.lineWidth=1;
+                    ctx.beginPath(); ctx.roundRect(-eyeR*1.1, -eyeR*0.65, eyeR*2.2, eyeR*1.3, eyeR*0.3); ctx.fill(); ctx.stroke();
+                    // lens glare
+                    ctx.fillStyle='rgba(255,255,255,.18)';
+                    ctx.beginPath(); ctx.ellipse(-eyeR*0.3, -eyeR*0.15, eyeR*0.45, eyeR*0.22, -0.4, 0, Math.PI*2); ctx.fill();
+                    ctx.restore();
+                });
+                // bridge between glasses
+                ctx.strokeStyle='#888'; ctx.lineWidth=1.5;
+                ctx.beginPath(); ctx.moveTo(e1x, e1y); ctx.lineTo(e2x, e2y); ctx.stroke();
+            } else if (style === 'sleepy') {
+                eyes.forEach(([ex, ey]) => {
+                    // white base
+                    ctx.beginPath(); ctx.arc(ex, ey, eyeR, 0, Math.PI*2); ctx.fillStyle='white'; ctx.fill();
+                    // droopy eyelid — half-circle clipping effect via rectangle
+                    ctx.beginPath(); ctx.arc(ex + nx*eyeR*0.2, ey + ny*eyeR*0.2, eyeR*0.55, 0, Math.PI*2); ctx.fillStyle='#444'; ctx.fill();
+                    // eyelid cover (background color) over top half
+                    ctx.save();
+                    ctx.beginPath(); ctx.rect(ex - eyeR*1.5, ey - eyeR*1.8, eyeR*3, eyeR*1.55);
+                    ctx.fillStyle='rgba(6,14,28,0.92)'; ctx.fill();
+                    ctx.restore();
+                    // droopy eyelid arc line
+                    ctx.strokeStyle='rgba(160,160,180,.7)'; ctx.lineWidth=eyeR*0.25;
+                    ctx.beginPath();
+                    const a = Math.atan2(ny, nx);
+                    ctx.arc(ex, ey, eyeR*1.02, a + Math.PI*0.55, a + Math.PI*1.45);
+                    ctx.stroke();
+                });
+            }
+        }
+
+        // Pattern grid buttons
+        document.querySelectorAll('.patternBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.patternBtn').forEach(b=>b.classList.remove('active'));
+                btn.classList.add('active');
+                customState.pattern = btn.dataset.value;
+                if (patternSelect) { patternSelect.value = btn.dataset.value; patternSelect.dispatchEvent(new Event('change')); }
+                const el = document.getElementById('previewPattern');
+                if (el) el.textContent = btn.querySelector('span:last-child').textContent;
+            });
+        });
+
+        // Eye grid buttons
+        document.querySelectorAll('.eyeBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.eyeBtn').forEach(b=>b.classList.remove('active'));
+                btn.classList.add('active');
+                customState.eye = btn.dataset.eye;
+            });
+        });
+
+        // Trail grid buttons
+        document.querySelectorAll('.trailBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.trailBtn').forEach(b=>b.classList.remove('active'));
+                btn.classList.add('active');
+                customState.trail = btn.dataset.trail;
+            });
+        });
+
+        // Color change
+        if (colorInput) colorInput.addEventListener('input', () => {
+            customState.color = colorInput.value;
+            refreshPatternThumbs();
+        });
+        if (accentColorInput) accentColorInput.addEventListener('input', () => { customState.accent = accentColorInput.value; });
+
+        // Name input updates preview
+        const nameInput = document.getElementById('nameInput');
+        if (nameInput) nameInput.addEventListener('input', () => {
+            const el = document.getElementById('previewName');
+            if (el) el.textContent = nameInput.value || 'Your Worm';
+        });
+
+        // Animate preview continuously
+        function previewLoop(ts) {
+            if (previewCanvas && !previewCanvas.hidden && document.getElementById('lobbyViewCustomize') && !document.getElementById('lobbyViewCustomize').hidden) {
+                drawWormPreview(ts);
+            }
+            requestAnimationFrame(previewLoop);
+        }
+        requestAnimationFrame(previewLoop);
+        refreshPatternThumbs();
+    })();
+    </script>
+</body>
 </html>

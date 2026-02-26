@@ -1269,11 +1269,15 @@
     let WORM_ID = 1;
 
     class Worm {
-        constructor(name, x, y, color, pattern = "solid", isPlayer = false, baseMass = CFG.START_MASS) {
+        constructor(name, x, y, color, pattern = "solid", isPlayer = false, baseMass = CFG.START_MASS, eyeStyle = "default", accentColor = "#ffffff", trailEffect = "none") {
             this.id = WORM_ID++;
             this.name = name;
             this.color = color;
             this.pattern = pattern;
+            this.eyeStyle = eyeStyle;
+            this.accentColor = accentColor || "#ffffff";
+            this.trailEffect = trailEffect || "none";
+            this._trailParticles = [];
             this.isPlayer = isPlayer;
 
             this.head = new Vec2(x, y);
@@ -1385,6 +1389,19 @@
             if (this.pattern === "gradient") {
                 const t = i / Math.max(1, this.segments.length - 1);
                 const rgb = { r: Math.round(lerp(lighter.r, darker.r, t)), g: Math.round(lerp(lighter.g, darker.g, t)), b: Math.round(lerp(lighter.b, darker.b, t)) };
+                return rgbaStr(rgb, 1);
+            }
+            if (this.pattern === "rainbow") {
+                const hue = ((i / Math.max(1, this.segments.length - 1)) * 360 + performance.now() * 0.05) % 360;
+                return `hsl(${hue},100%,62%)`;
+            }
+            if (this.pattern === "camo") {
+                const cols = [base, darker, { r: Math.max(0,base.r-60), g: Math.max(0,base.g+20), b: Math.max(0,base.b-40) }];
+                return rgbaStr(cols[i % 3], 1);
+            }
+            if (this.pattern === "neon") {
+                const p = 0.5 + 0.5 * Math.sin(i * 0.4 + performance.now() * 0.006);
+                const rgb = { r: Math.round(lerp(base.r, lighter.r, p)), g: Math.round(lerp(base.g, lighter.g, p)), b: Math.round(lerp(base.b, lighter.b, p)) };
                 return rgbaStr(rgb, 1);
             }
             return rgbaStr(base, 1);
@@ -1683,6 +1700,47 @@
                 this.trail[0].y = this.head.y;
             }
 
+            // Spawn trail effect particles
+            if (this.trailEffect && this.trailEffect !== "none") {
+                const tailPt = this.trail[this.trail.length - 1];
+                if (tailPt) {
+                    const fx = this.trailEffect;
+                    const trailPalettes = {
+                        sparkle: ["rgba(255,229,90,1)","rgba(255,243,160,1)","rgba(255,215,0,1)","rgba(255,255,255,1)"],
+                        fire:    ["rgba(255,106,0,1)","rgba(255,149,0,1)","rgba(255,200,0,1)","rgba(255,60,0,1)"],
+                        ice:     ["rgba(160,216,255,1)","rgba(200,238,255,1)","rgba(107,191,255,1)","rgba(224,244,255,1)"],
+                        ghost:   ["rgba(200,200,255,0.8)","rgba(232,232,255,0.7)","rgba(152,152,238,0.9)","rgba(220,220,255,0.6)"],
+                        star:    ["rgba(255,224,102,1)","rgba(255,243,160,1)","rgba(255,221,0,1)","rgba(255,255,200,1)"]
+                    };
+                    const palette = trailPalettes[fx] || trailPalettes.sparkle;
+                    const spawnRate = fx === "fire" ? 0.7 : fx === "ghost" ? 0.35 : 0.55;
+                    if (Math.random() < spawnRate) {
+                        this._trailParticles.push({
+                            x: tailPt.x + (Math.random()-0.5)*10,
+                            y: tailPt.y + (Math.random()-0.5)*10,
+                            vx: (Math.random()-0.5)*28,
+                            vy: (Math.random()-0.5)*28 - (fx==="fire"?35:0) + (fx==="ghost"?-5:0),
+                            r: Math.random()*4 + 2,
+                            life: 1.0,
+                            decay: Math.random()*0.6 + 0.4,
+                            col: palette[Math.floor(Math.random()*palette.length)],
+                            isStar: fx === "star" && Math.random() < 0.35,
+                            spin: Math.random()*8-4
+                        });
+                    }
+                }
+                // Update + cull existing particles
+                for (let i = this._trailParticles.length-1; i >= 0; i--) {
+                    const p = this._trailParticles[i];
+                    p.life -= p.decay * dt;
+                    p.x += p.vx * dt;
+                    p.y += p.vy * dt;
+                    p.vy += (this.trailEffect === "fire" ? -60 : 8) * dt;
+                    if (p.life <= 0) this._trailParticles.splice(i, 1);
+                }
+                if (this._trailParticles.length > 80) this._trailParticles.splice(0, this._trailParticles.length - 80);
+            }
+
             this._ensureTrailLength();
             this._sampleSegmentsFromTrail();
         }
@@ -1768,7 +1826,57 @@
                 }
 
 
-                // body
+                // Trail effect particles (draw before body so they appear behind)
+                if (this.trailEffect && this.trailEffect !== "none" && this._trailParticles && this._trailParticles.length > 0) {
+                    ctx.save();
+                    ctx.shadowBlur = 0;
+                    const camZ = camera.zoom || 1;
+                    for (let _ti = 0; _ti < this._trailParticles.length; _ti++) {
+                        const tp = this._trailParticles[_ti];
+                        const tsp = camera.worldToScreen(new Vec2(tp.x, tp.y));
+                        const talpha = Math.max(0, tp.life);
+                        const tradius = Math.max(0.5, tp.r * camZ * (0.4 + 0.6 * tp.life));
+                        ctx.globalAlpha = talpha * 0.9;
+                        if (tp.isStar) {
+                            ctx.save();
+                            ctx.translate(tsp.x, tsp.y);
+                            ctx.rotate(tp.spin * (1 - tp.life));
+                            ctx.fillStyle = tp.col;
+                            const rs = tradius * 1.8;
+                            ctx.beginPath();
+                            for (let _s = 0; _s < 5; _s++) {
+                                const sa = (_s * 4 * Math.PI / 5) - Math.PI/2;
+                                const ia = sa + Math.PI/5;
+                                if (_s === 0) ctx.moveTo(Math.cos(sa)*rs, Math.sin(sa)*rs);
+                                else ctx.lineTo(Math.cos(sa)*rs, Math.sin(sa)*rs);
+                                ctx.lineTo(Math.cos(ia)*rs*0.42, Math.sin(ia)*rs*0.42);
+                            }
+                            ctx.closePath(); ctx.fill();
+                            ctx.restore();
+                        } else {
+                            // Glow halo — soft radial gradient
+                            const _tc = tp.col;
+                            const _tcFade = _tc.replace(/,[^,)]+\)$/, ',0)');
+                            const glowR = tradius * 2.2;
+                            const tg = ctx.createRadialGradient(tsp.x, tsp.y, 0, tsp.x, tsp.y, glowR);
+                            tg.addColorStop(0, _tc);
+                            tg.addColorStop(0.5, _tc.replace(/,[^,)]+\)$/, ',0.4)'));
+                            tg.addColorStop(1, _tcFade);
+                            ctx.fillStyle = tg;
+                            ctx.beginPath(); ctx.arc(tsp.x, tsp.y, glowR, 0, Math.PI*2); ctx.fill();
+                            // Bright solid core
+                            ctx.fillStyle = _tc;
+                            ctx.beginPath(); ctx.arc(tsp.x, tsp.y, tradius * 0.8, 0, Math.PI*2); ctx.fill();
+                        }
+                    }
+                    ctx.globalAlpha = 1;
+                    ctx.restore();
+                }
+
+                // body — reset any leaked state from power-up glow block
+                ctx.shadowBlur = 0;
+                ctx.shadowColor = "transparent";
+                ctx.globalAlpha = 1;
                 for (let i = this.segments.length - 1; i >= 0; i--) {
                     const p = this.segments[i];
                     const r = this.radiusAt(i);
@@ -1785,13 +1893,26 @@
                     ctx.globalAlpha = (i === 0) ? 1 : 0.92;
                     ctx.arc(sp.x, sp.y, sr, 0, Math.PI * 2);
                     ctx.fill();
-                    ctx.strokeStyle = "rgba(0,0,0,0.22)";
+                    // Accent tints the outline subtly
+                    if (this.accentColor && this.accentColor !== "#ffffff" && this.accentColor !== "#ffffffff") {
+                        const _ar = parseInt(this.accentColor.slice(1,3)||"0",16);
+                        const _ag = parseInt(this.accentColor.slice(3,5)||"0",16);
+                        const _ab = parseInt(this.accentColor.slice(5,7)||"0",16);
+                        ctx.strokeStyle = `rgba(${_ar},${_ag},${_ab},0.28)`;
+                    } else {
+                        ctx.strokeStyle = "rgba(0,0,0,0.22)";
+                    }
                     ctx.lineWidth = Math.max(1.5, sr * 0.22);
                     ctx.stroke();
 
                     if (i % 6 === 0) {
                         ctx.beginPath();
-                        ctx.fillStyle = "rgba(255,255,255,.08)";
+                        // Use accent color for shimmer highlight if set
+                        const accentHex = this.accentColor || "#ffffff";
+                        const ar = parseInt(accentHex.slice(1,3)||"ff",16);
+                        const ag = parseInt(accentHex.slice(3,5)||"ff",16);
+                        const ab = parseInt(accentHex.slice(5,7)||"ff",16);
+                        ctx.fillStyle = `rgba(${ar},${ag},${ab},0.10)`;
                         ctx.arc(sp.x - r * 0.22, sp.y - r * 0.22, r * 0.55, 0, Math.PI * 2);
                         ctx.fill();
                     }
@@ -1802,25 +1923,123 @@
 
             }
 
-            // eyes
+            // eyes — styled per eyeStyle property
+            ctx.save();
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = "transparent";
+            {
+                const a = this.angle;
+                const z = camera.zoom || 1;
+                // All eye measurements in SCREEN space (already zoomed)
+                const hr = this.radiusAt(0) * z;       // head radius in screen px
+                const spread = Math.max(3.0, hr * 0.40);  // perpendicular eye spread
+                const fwdOff = Math.max(2.5, hr * 0.35);  // forward offset
+                const eR    = Math.max(2.5, hr * 0.28);   // eye ball radius
 
-            const a = this.angle;
-            const eyeOff = Vec2.fromAngle(a + Math.PI / 2);
-            eyeOff.x *= 4; eyeOff.y *= 4;
-            const fwd = Vec2.fromAngle(a);
-            fwd.x *= 5.5; fwd.y *= 5.5;
+                // Unit vectors in screen direction
+                const cosA = Math.cos(a), sinA = Math.sin(a);
+                const perpX = -sinA, perpY = cosA;  // perpendicular to heading
 
-            const e1x = headSp.x + eyeOff.x + fwd.x;
-            const e1y = headSp.y + eyeOff.y + fwd.y;
-            const e2x = headSp.x - eyeOff.x + fwd.x;
-            const e2y = headSp.y - eyeOff.y + fwd.y;
+                const e1x = headSp.x + perpX * spread + cosA * fwdOff;
+                const e1y = headSp.y + perpY * spread + sinA * fwdOff;
+                const e2x = headSp.x - perpX * spread + cosA * fwdOff;
+                const e2y = headSp.y - perpY * spread + sinA * fwdOff;
 
-            ctx.fillStyle = "rgba(0,0,0,.65)";
-            ctx.beginPath(); ctx.arc(e1x, e1y, 2.3, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(e2x, e2y, 2.3, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "rgba(255,255,255,.55)";
-            ctx.beginPath(); ctx.arc(e1x - 0.7, e1y - 0.7, 0.9, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(e2x - 0.7, e2y - 0.7, 0.9, 0, Math.PI * 2); ctx.fill();
+                const style = this.eyeStyle || "default";
+
+                if (style === "default" || style === "cute") {
+                    [[e1x,e1y],[e2x,e2y]].forEach(([ex,ey]) => {
+                        ctx.beginPath(); ctx.arc(ex, ey, eR, 0, Math.PI*2);
+                        ctx.fillStyle = "white"; ctx.fill();
+                        ctx.beginPath(); ctx.arc(ex + Math.cos(a)*eR*0.3, ey + Math.sin(a)*eR*0.3, eR*0.55, 0, Math.PI*2);
+                        ctx.fillStyle = "#111"; ctx.fill();
+                        ctx.beginPath(); ctx.arc(ex + Math.cos(a)*eR*0.45, ey + Math.sin(a)*eR*0.45 - eR*0.2, eR*0.2, 0, Math.PI*2);
+                        ctx.fillStyle = "white"; ctx.fill();
+                    });
+                    if (style === "cute") {
+                        [[e1x,e1y],[e2x,e2y]].forEach(([ex,ey]) => {
+                            ctx.beginPath();
+                            ctx.arc(ex - cosA*eR*0.2, ey - sinA*eR*0.2 + eR*0.9, eR*0.6, 0, Math.PI*2);
+                            ctx.fillStyle = "rgba(255,100,150,.4)"; ctx.fill();
+                        });
+                    }
+                } else if (style === "angry") {
+                    [[e1x,e1y],[e2x,e2y]].forEach(([ex,ey]) => {
+                        ctx.beginPath(); ctx.arc(ex, ey, eR, 0, Math.PI*2);
+                        ctx.fillStyle = "white"; ctx.fill();
+                        ctx.beginPath(); ctx.arc(ex + cosA*eR*0.3, ey + sinA*eR*0.3, eR*0.55, 0, Math.PI*2);
+                        ctx.fillStyle = "#cc0000"; ctx.fill();
+                    });
+                    ctx.strokeStyle = "#cc0000"; ctx.lineWidth = Math.max(1.5, eR*0.38);
+                    // Brow over eye 1: slants inward (from outer-above to inner)
+                    ctx.beginPath();
+                    ctx.moveTo(e1x - perpX*eR*1.1 - cosA*eR*0.4, e1y - perpY*eR*1.1 - sinA*eR*0.4);
+                    ctx.lineTo(e1x + perpX*eR*0.3 + cosA*eR*0.1, e1y + perpY*eR*0.3 + sinA*eR*0.1);
+                    ctx.stroke();
+                    // Brow over eye 2: mirror
+                    ctx.beginPath();
+                    ctx.moveTo(e2x + perpX*eR*1.1 - cosA*eR*0.4, e2y + perpY*eR*1.1 - sinA*eR*0.4);
+                    ctx.lineTo(e2x - perpX*eR*0.3 + cosA*eR*0.1, e2y - perpY*eR*0.3 + sinA*eR*0.1);
+                    ctx.stroke();
+                } else if (style === "alien") {
+                    [[e1x,e1y],[e2x,e2y]].forEach(([ex,ey]) => {
+                        ctx.save();
+                        ctx.translate(ex, ey);
+                        ctx.rotate(a);
+                        ctx.beginPath(); ctx.ellipse(0, 0, eR*1.35, eR*0.72, 0, 0, Math.PI*2);
+                        ctx.fillStyle = "#7cf7b6"; ctx.fill();
+                        ctx.beginPath(); ctx.ellipse(eR*0.1, 0, eR*0.65, eR*0.55, 0, 0, Math.PI*2);
+                        ctx.fillStyle = "#023a1a"; ctx.fill();
+                        ctx.beginPath(); ctx.arc(eR*0.3, -eR*0.18, eR*0.2, 0, Math.PI*2);
+                        ctx.fillStyle = "rgba(124,247,182,.6)"; ctx.fill();
+                        ctx.restore();
+                    });
+                } else if (style === "cool") {
+                    ctx.save();
+                    const bridgeX = (e1x+e2x)/2, bridgeY = (e1y+e2y)/2;
+                    [[e1x,e1y],[e2x,e2y]].forEach(([ex,ey]) => {
+                        ctx.save();
+                        ctx.translate(ex, ey);
+                        ctx.rotate(a);
+                        ctx.fillStyle = "#1a1a2e"; ctx.strokeStyle="#888"; ctx.lineWidth=1;
+                        ctx.beginPath();
+                        if (ctx.roundRect) ctx.roundRect(-eR*1.1,-eR*0.65,eR*2.2,eR*1.3,eR*0.3);
+                        else { ctx.rect(-eR*1.1,-eR*0.65,eR*2.2,eR*1.3); }
+                        ctx.fill(); ctx.stroke();
+                        ctx.fillStyle = "rgba(255,255,255,.18)";
+                        ctx.beginPath(); ctx.ellipse(-eR*0.3,-eR*0.15,eR*0.45,eR*0.22,-0.4,0,Math.PI*2); ctx.fill();
+                        ctx.restore();
+                    });
+                    ctx.strokeStyle="#888"; ctx.lineWidth=1.5;
+                    ctx.beginPath(); ctx.moveTo(e1x,e1y); ctx.lineTo(e2x,e2y); ctx.stroke();
+                    ctx.restore();
+                } else if (style === "sleepy") {
+                    [[e1x,e1y],[e2x,e2y]].forEach(([ex,ey]) => {
+                        ctx.save();
+                        // Draw eye only in lower half using clipping
+                        ctx.beginPath(); ctx.arc(ex, ey, eR, 0, Math.PI*2); ctx.clip();
+                        // White sclera
+                        ctx.beginPath(); ctx.arc(ex, ey, eR, 0, Math.PI*2); ctx.fillStyle="white"; ctx.fill();
+                        // Pupil pushed down
+                        ctx.beginPath(); ctx.arc(ex+cosA*eR*0.15, ey+sinA*eR*0.15+eR*0.3, eR*0.52, 0, Math.PI*2);
+                        ctx.fillStyle="#333"; ctx.fill();
+                        ctx.restore();
+                        // Droopy eyelid arc
+                        ctx.strokeStyle="rgba(180,180,200,.85)"; ctx.lineWidth=Math.max(1.5, eR*0.32);
+                        ctx.beginPath(); ctx.arc(ex, ey, eR*1.05, a+Math.PI*0.48, a+Math.PI*1.52); ctx.stroke();
+                    });
+                } else {
+                    // fallback: default dots
+                    ctx.fillStyle = "rgba(0,0,0,.65)";
+                    ctx.beginPath(); ctx.arc(e1x, e1y, eR*0.8, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(e2x, e2y, eR*0.8, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "rgba(255,255,255,.55)";
+                    ctx.beginPath(); ctx.arc(e1x-0.7,e1y-0.7,eR*0.32,0,Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(e2x-0.7,e2y-0.7,eR*0.32,0,Math.PI*2); ctx.fill();
+                }
+            }
+            ctx.restore(); // end eye block
 
             // name label (below worm)
             ctx.save();
@@ -1997,8 +2216,9 @@
         playerName = (nameInput.value || "").trim().slice(0, 18);
         const pName = playerName || "You";
         const pColor = colorInput.value || "#7cf7b6";
+        const cOpts = getCustomOptions();
 
-        player = new Worm(pName, px, py, pColor, patternSelect?.value || "solid", true, CFG.START_MASS);
+        player = new Worm(pName, px, py, pColor, patternSelect?.value || "solid", true, CFG.START_MASS, cOpts.eyeStyle, cOpts.accentColor, cOpts.trailEffect);
 
         window.player = player;
         worms.push(player);
@@ -2040,10 +2260,22 @@
 
     const nameInput = document.getElementById("nameInput");
     const colorInput = document.getElementById("colorInput");
+    const accentColorInput = document.getElementById("accentColorInput");
     const arenaColorInput = document.getElementById("arenaColorInput");
     const patternSelect = document.getElementById("patternSelect");
     const musicToggle = document.getElementById("musicToggle");
     const sfxToggle = document.getElementById("sfxToggle");
+
+    // Helper: read active customization UI state
+    function getCustomOptions() {
+        const eyeBtn = document.querySelector(".eyeBtn.active");
+        const trailBtn = document.querySelector(".trailBtn.active");
+        return {
+            eyeStyle:    eyeBtn    ? (eyeBtn.dataset.eye   || "default") : "default",
+            accentColor: accentColorInput ? (accentColorInput.value || "#ffffff") : "#ffffff",
+            trailEffect: trailBtn ? (trailBtn.dataset.trail || "none")    : "none"
+        };
+    }
 
     const lobbyTabStart = document.getElementById("lobbyTabStart");
     const lobbyTabInfo = document.getElementById("lobbyTabInfo");
@@ -2460,6 +2692,7 @@
 
     function drawWorldGrid() {
         const grid = CFG.BACKGROUND_GRID;
+        const z = camera.zoom || 1;
         const startX = Math.floor((camera.pos.x - camera.halfViewW() - grid) / grid) * grid;
         const endX = Math.floor((camera.pos.x + camera.halfViewW() + grid) / grid) * grid;
         const startY = Math.floor((camera.pos.y - camera.halfViewH() - grid) / grid) * grid;
@@ -2470,11 +2703,11 @@
         ctx.lineWidth = 1;
 
         for (let x = startX; x <= endX; x += grid) {
-            const sx = x - camera.pos.x + camera.halfViewW();
+            const sx = (x - camera.pos.x) * z + window.innerWidth / 2;
             ctx.beginPath(); ctx.moveTo(sx, -50); ctx.lineTo(sx, window.innerHeight + 50); ctx.stroke();
         }
         for (let y = startY; y <= endY; y += grid) {
-            const sy = y - camera.pos.y + camera.halfViewH();
+            const sy = (y - camera.pos.y) * z + window.innerHeight / 2;
             ctx.beginPath(); ctx.moveTo(-50, sy); ctx.lineTo(window.innerWidth + 50, sy); ctx.stroke();
         }
     }
@@ -2972,8 +3205,9 @@
         playerName = (nameInput.value || "").trim().slice(0, 18);
         const pName = playerName || "You";
         const pColor = colorInput.value || "#7cf7b6";
+        const cOpts = getCustomOptions();
 
-        player = new Worm(pName, px, py, pColor, patternSelect?.value || "solid", true, CFG.START_MASS);
+        player = new Worm(pName, px, py, pColor, patternSelect?.value || "solid", true, CFG.START_MASS, cOpts.eyeStyle, cOpts.accentColor, cOpts.trailEffect);
 
         window.player = player;
         worms.push(player);
